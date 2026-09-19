@@ -1,44 +1,109 @@
 //standardized logging styles
-export namespace Log {
+export class LogFormatter {
 
-    const preferredScheme = window?.matchMedia?.('(prefers-color-scheme:dark)')?.matches ? 'dark' : 'light'
+    private Colors: LogFormatter.Colors = {
+        NORMAL: 'white',
+        ERROR: 'red',
+        WARNING: 'yellow',
+        INFO: 'lightblue',
+        HIGHLIGHT: 'hotpink'
+    };
 
+    private Volumes: LogFormatter.Volumes = {
+        NORMAL: '1em',
+        SOFT: '.75em',
+        LOUD: '1.25em'
+    };
+
+    private Emphasis = {
+        BOLD: 'font-weight: bold',
+        ITALICS: 'font-style: italics'
+    }
+
+    private options: LogFormatter.LogFormatterOptions;
     //need to define index signature to
     //avoid "can't use string as index" errors
-    export const Formats: {[index: string]: string} = {
-        //all of these options are shorthand
-        //where v = volume, c = color, and e = emphasis
-        //volume is how loud the message segment should be using font-size
-        //emphasis used for log message segments that should stand out
-        '#vn': 'font-size: 1em;', //log volume normal
-        '#vs': 'font-size: .75em;', //log volume soft
-        '#vl': 'font-size: 1.25em;', //log volume loud
-        '#cd': preferredScheme === 'light' ? 'color: black;' : 'color: white;', //default font color
-        '#cb': 'color: black;',
-        '#ci': 'color: indigo;',
-        '#cp': 'color: hotpink;',
-        '#cy': 'color: yellow;',
-        '#cr': 'color: red;',
-        '#ei': 'font-style: italic;', //emphasize italic
-        '#eb': 'font-weight: bold;' //emphasize in bold
-    };
+    private formats: {[index: string]: string};
+
+    constructor (options?: LogFormatter.LogFormatterOptions) {
+
+        this.options = options ? options : { Colors: this.Colors, Volumes: this.Volumes };
+        this.formats =  {
+            /////////////////////////////////////////////////////////////////
+            //all of these options are shorthand
+            //d = default, e = error, i = info, w = warning, h = highlight
+            /////////////////////////////////////////////////////////////////
+            //all the defaults...
+            '#dn': `color: ${this.options.Colors.NORMAL}; font-size: ${this.options.Volumes.NORMAL};`, 
+            '#ds': `color: ${this.options.Colors.NORMAL}; font-size: ${this.options.Volumes.SOFT};`,
+            '#dl': `color: ${this.options.Colors.NORMAL}; font-size: ${this.options.Volumes.LOUD}`,
+            '#db': `color: ${this.options.Colors.NORMAL}; font-size: ${this.options.Volumes.NORMAL}; ${this.Emphasis.BOLD};`,
+            '#di': `color: ${this.options.Colors.NORMAL}; font-size: 1em; ${this.Emphasis.ITALICS};`,
+            //all the errors...
+            '#en': `color: ${this.options.Colors.ERROR}; font-size: ${this.options.Volumes.NORMAL};`, 
+            '#es': `color: ${this.options.Colors.ERROR}; font-size: ${this.options.Volumes.SOFT};`,
+            '#el': `color: ${this.options.Colors.ERROR}; font-size: ${this.options.Volumes.LOUD}`,
+            '#eb': `color: ${this.options.Colors.ERROR}; font-size: ${this.options.Volumes.NORMAL}; ${this.Emphasis.BOLD};`,
+            '#ei': `color: ${this.options.Colors.ERROR}; font-size: 1em; ${this.Emphasis.ITALICS};`,
+            //all the infos...
+            '#in': `color: ${this.options.Colors.INFO}; font-size: ${this.options.Volumes.NORMAL};`,
+            '#is': `color: ${this.options.Colors.INFO}; font-size: ${this.options.Volumes.SOFT};`,
+            '#il': `color: ${this.options.Colors.INFO}; font-size: ${this.options.Volumes.LOUD}`,
+            '#ib': `color: ${this.options.Colors.INFO}; font-size: ${this.options.Volumes.NORMAL}; ${this.Emphasis.BOLD};`,
+            '#ii': `color: ${this.options.Colors.INFO}; font-size: 1em; ${this.Emphasis.ITALICS};`,
+            //all the warnings...
+            '#wn': `color: ${this.options.Colors.WARNING}; font-size: ${this.options.Volumes.NORMAL};`,
+            '#ws': `color: ${this.options.Colors.WARNING}; font-size: ${this.options.Volumes.SOFT};`,
+            '#wl': `color: ${this.options.Colors.WARNING}; font-size: ${this.options.Volumes.LOUD}`,
+            '#wb': `color: ${this.options.Colors.WARNING}; font-size: ${this.options.Volumes.NORMAL}; ${this.Emphasis.BOLD};`,
+            '#wi': `color: ${this.options.Colors.WARNING}; font-size: 1em; ${this.Emphasis.ITALICS};`,
+            //all the highlights
+            '#hn': `color: ${this.options.Colors.HIGHLIGHT}; font-size: ${this.options.Volumes.NORMAL};`,
+            '#hs': `color: ${this.options.Colors.HIGHLIGHT}; font-size: ${this.options.Volumes.SOFT};`,
+            '#hl': `color: ${this.options.Colors.HIGHLIGHT}; font-size: ${this.options.Volumes.LOUD}`,
+            '#hb': `color: ${this.options.Colors.HIGHLIGHT}; font-size: ${this.options.Volumes.NORMAL}; ${this.Emphasis.BOLD};`,
+            '#hi': `color: ${this.options.Colors.HIGHLIGHT}; font-size: 1em; ${this.Emphasis.ITALICS};`,
+        };
+    }
 
     //takes a message using the Formats above instead of %c
     //extracts those formats, replaces the Formats with %c,
     //then returns an array with the new message and styles
-    export function Format (message: string) {
+    Format = (message: string) => {
 
         const regex = /#[\w-]{2}/g; //all message segments marked with # Formats
         const matches = [...message.matchAll(regex)].flat(); //array of each format specified in the message
-        //console.log(matches);
         
         let new_message = message.replaceAll(regex, '%c'); //replace all # Formats with %c so console can parse the message
         const new_formats: Array<string> = matches.map((v) => { //get an array of style strings to apply in order of appearance
-            return Formats[v]
+            return this.formats[v]
         });
-        //console.log(new_formats)
+        
         return [`${new_message}`].concat(new_formats); //return an array with console arguments in order
         
     }
+
+}
+
+export namespace LogFormatter {
+
+    export type Colors = {
+        NORMAL: string,
+        ERROR: string,
+        INFO: string,
+        WARNING: string,
+        HIGHLIGHT: string
+    };
+
+    export type Volumes = {
+        NORMAL: string,
+        SOFT: string,
+        LOUD: string
+    };
+
+    export type LogFormatterOptions = {
+        Colors: LogFormatter.Colors,
+        Volumes: LogFormatter.Volumes
+    };
 
 }
